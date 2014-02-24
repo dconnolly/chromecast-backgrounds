@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+'use strict';
 
 var fs = require('fs');
 var _ = require('lodash');
@@ -8,9 +8,9 @@ var read = Q.denodeify(fs.readFile);
 var write = Q.denodeify(fs.writeFile);
 var request = Q.denodeify(require('request'));
 
-var chromecastHomeURL = "https://clients3.google.com/cast/chromecast/home/v/c9541b08";
+var chromecastHomeURL = 'https://clients3.google.com/cast/chromecast/home/v/c9541b08';
 var initJSONStateRegex = /(JSON\.parse\(.+'\))/;
-var backgroundsJSONFile = "backgrounds.json";
+var backgroundsJSONFile = 'backgrounds.json';
 
 var parseChromecastHome = function(htmlString) {
     var JSONParse = htmlString.match(initJSONStateRegex)[1];
@@ -29,7 +29,7 @@ var parseChromecastHome = function(htmlString) {
 var updateSize = function(sizeString, backgrounds) {
     var sizeRegex = /\/s\d+.*?\//;
     _(backgrounds).each(function(backgroundEntry) {
-        backgroundEntry.url = backgroundEntry.url.replace(sizeRegex, "/"+sizeString+"/");
+        backgroundEntry.url = backgroundEntry.url.replace(sizeRegex, '/'+sizeString+'/');
     });
 };
 
@@ -48,22 +48,20 @@ var saveObjectToFile = function(filename, content) {
 var writeInlineMarkdown = function(filename, backgrounds) {
     var content = '';
     _(backgrounds).each(function(backgroundEntry) {
-        content += "![]("+backgroundEntry.url+")\n";
+        content += '![]('+backgroundEntry.url+')\n';
     });
     write(filename, content);
 };
 
-var scrapeChromecastBackgrounds = function() {
+module.exports = function() {
     Q.all([read(backgroundsJSONFile, 'utf8'), request(chromecastHomeURL)])
         .spread(function(backgroundsJSON, requestResult) {
             var backgrounds = JSON.parse(backgroundsJSON);
             var parsed = parseChromecastHome(requestResult[1]);
             parsed = updateSize('s2560', parsed);
             backgrounds = _.uniq(_.union(backgrounds, parsed), 'url');
-            console.log("Writing: ", backgrounds);
+            console.log('Writing: ', backgrounds);
             saveObjectToFile(backgroundsJSONFile, backgrounds);
             writeInlineMarkdown('README.md', backgrounds);
         });
 };
-
-scrapeChromecastBackgrounds();

@@ -9,11 +9,11 @@ var nopt = require('nopt');
 var chalk = require('chalk');
 var getChromecastBackgrounds = require('./index');
 
-var read = Q.denodeify(fs.readFile);
-var write = Q.denodeify(fs.writeFile);
+var read = Q.denodeify(fs.readFileSync);
+var write = Q.denodeify(fs.writeFileSync);
 
 var saveObjectToFile = function(filename, content) {
-    var jsonString = JSON.stringify(content);
+    var jsonString = JSON.stringify(content, null, 4);
     write(filename, jsonString, function(err, data) {
         if (err) {
             return console.log(err);
@@ -98,7 +98,7 @@ getChromecastBackgrounds().then(function(backgrounds) {
         writeInlineMarkdown(options.writemd, backgrounds);
     }
     if (options.verbose) {
-        console.log(chalk.grey(JSON.stringify(backgrounds)));
+        console.log(chalk.grey(JSON.stringify(backgrounds, null, 4)));
     }
     if (options.download) {
         console.log(chalk.underline('Downloading background images...\n'));

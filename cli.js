@@ -41,7 +41,6 @@ var updateSize = function(sizeString, backgrounds) {
 
 var downloadImages = function(backgrounds, directory) {
     var promises = [];
-    console.log(backgrounds);
     fs.existsSync(directory) || fs.mkdirSync(directory);
     _.each(backgrounds, function(backgroundEntry) {
         var deferred = Q.defer();

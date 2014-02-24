@@ -6,6 +6,7 @@ var Q = require('q');
 var fs = require('fs');
 var request = require('request');
 var nopt = require('nopt');
+var chalk = require('chalk');
 var getChromecastBackgrounds = require('./index');
 
 var read = Q.denodeify(fs.readFile);
@@ -33,13 +34,14 @@ var writeInlineMarkdown = function(filename, backgrounds) {
 
 var updateSize = function(sizeString, backgrounds) {
     var sizeRegex = /\/s\d+.*?\//;
-    _(backgrounds).each(function(backgroundEntry) {
+    _.each(backgrounds, function(backgroundEntry) {
         backgroundEntry.url = backgroundEntry.url.replace(sizeRegex, '/'+sizeString+'/');
     });
 };
 
 var downloadImages = function(backgrounds, directory) {
     var promises = [];
+    console.log(backgrounds);
     fs.existsSync(directory) || fs.mkdirSync(directory);
     _.each(backgrounds, function(backgroundEntry) {
         var deferred = Q.defer();
@@ -48,13 +50,11 @@ var downloadImages = function(backgrounds, directory) {
         request(backgroundEntry.url)
             .pipe(fs.createWriteStream(filename))
             .on('close', function() {
-                console.log(filename);
+                console.log(chalk.grey(filename));
                 deferred.resolve();
             });
     });
-    Q.all(promises).done(function() {
-        console.log('All done!');
-    });
+    return Q.all(promises);
 };
 
 var options = nopt({
@@ -71,17 +71,19 @@ var options = nopt({
 });
 
 if (options.help) {
-    console.log('chromecast-backgrounds --download=<directory> --size=<size> --save=<file> --writemd=<file>');
+    console.log(chalk.yellow('chromecast-backgrounds --download=<directory> --size=<size> --save=<file> --writemd=<file>'));
     return;
 }
 
+console.log(chalk.underline('Parsing Chromecast Home...\n'));
+
 getChromecastBackgrounds().then(function(backgrounds) {
     if (options.size) {
-        console.log('Updating sizes to ', options.size);
-        backgrounds = updateSize(options.size, backgrounds);
+        console.log(chalk.underline('Updating sizes to', options.size));
+        updateSize(options.size, backgrounds);
     }
     if (options.load) {
-        console.log('Loading previous backgrounds from ', options.load);
+        console.log(chalk.underline('Loading previous backgrounds from', options.load));
         var backgroundsFromJSON;
         read(options.load, 'utf8').then(function(backgroundsJSON) {
             backgroundsFromJSON = JSON.parse(backgroundsJSON);
@@ -89,17 +91,22 @@ getChromecastBackgrounds().then(function(backgrounds) {
         });
     }
     if (options.save) {
-        console.log('Writing backgrounds JSON to ', options.save);
+        console.log(chalk.underline('Writing backgrounds JSON to', options.save));
         saveObjectToFile(options.save, backgrounds);
     }
     if (options.writemd) {
-        console.log('Writing backgrounds as inline markdown to ', options.writemd);
+        console.log(chalk.underline('Writing backgrounds as inline markdown to', options.writemd));
         writeInlineMarkdown(options.writemd, backgrounds);
     }
-    if (options.download) {
-        downloadImages(backgrounds, options.download);
-    }
     if (options.verbose) {
-        console.log(backgrounds);
+        console.log(chalk.grey(JSON.stringify(backgrounds)));
+    }
+    if (options.download) {
+        console.log(chalk.underline('Downloading background images...\n'));
+        downloadImages(backgrounds, options.download).done(function() {
+            console.log(chalk.green('\n✓ Done!'));
+        });
+    } else {
+        console.log(chalk.green('\n✓ Done!'));
     }
 });

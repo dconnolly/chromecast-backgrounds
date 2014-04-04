@@ -70,7 +70,12 @@ var options = nopt({
 });
 
 if (options.help) {
-    console.log(chalk.yellow('chromecast-backgrounds --download=<directory> --size=<size> --save=<file> --writemd=<file>'));
+    var helpString = 'chromecast-backgrounds \
+    --download=<directory> \
+    --size=<size> \
+    --save=<file> \
+    --writemd=<file>';
+    console.log(chalk.yellow(helpString));
     return;
 }
 

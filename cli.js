@@ -29,10 +29,19 @@ var writeInlineMarkdown = function(filename, backgrounds) {
     write(filename, content);
 };
 
-var updateSize = function(sizeString, backgrounds) {
-    var sizeRegex = /\/s\d+.*?\//;
+var updateWidth = function(widthString, backgrounds) {
+    var widthRegex = /\/s\d+\-w\d+\-c/;
     _.each(backgrounds, function(backgroundEntry) {
-        backgroundEntry.url = backgroundEntry.url.replace(sizeRegex, '/'+sizeString+'/');
+        backgroundEntry.url = backgroundEntry.url.replace(
+          widthRegex, '/s'+widthString+'-w'+widthString+'-c');
+    });
+};
+
+var updateHeight = function(heightString, backgrounds) {
+    var heightRegex = /\-h\d+\//;
+    _.each(backgrounds, function(backgroundEntry) {
+        backgroundEntry.url = backgroundEntry.url.replace(
+          heightRegex, '-h'+heightString+'/');
     });
 };
 
@@ -54,7 +63,8 @@ var downloadImages = function(backgrounds, directory) {
 };
 
 var options = nopt({
-    size: String,
+    width: String,
+    height: String,
     load: String,
     save: String,
     writemd: String,
@@ -69,8 +79,9 @@ var options = nopt({
 if (options.help) {
     var helpString = 'chromecast-backgrounds \
     --download=<directory> \
-    --size=<size> \
+    --height=<height_pixels> \
     --save=<file> \
+    --width=<width_pixels> \
     --writemd=<file>';
     console.log(chalk.yellow(helpString));
     return;
@@ -79,9 +90,13 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.size) {
-        console.log(chalk.underline('Updating sizes to', options.size));
-        updateSize(options.size, backgrounds);
+    if (options.width) {
+        console.log(chalk.underline('Updating width to', options.width));
+        updateWidth(options.width, backgrounds);
+    }
+    if (options.height) {
+        console.log(chalk.underline('Updating height to', options.height));
+        updateHeight(options.height, backgrounds);
     }
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));

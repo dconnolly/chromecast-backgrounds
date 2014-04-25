@@ -29,19 +29,30 @@ var writeInlineMarkdown = function(filename, backgrounds) {
     write(filename, content);
 };
 
-var updateWidth = function(widthString, backgrounds) {
-    var widthRegex = /\/s\d+\-w\d+\-c/;
+var updateSize = function(sizeString, backgrounds) {
+    // Stomps over any other dimensions, such as 'w', 'h', that may be present
+    // in the URL to guarantee that the specified size is honored.
+    var sizeRegex = /\/s\d+.*?\//;
     _.each(backgrounds, function(backgroundEntry) {
         backgroundEntry.url = backgroundEntry.url.replace(
-          widthRegex, '/s'+widthString+'-w'+widthString+'-c');
+          sizeRegex, '/s'+sizeString+'/');
     });
 };
 
-var updateHeight = function(heightString, backgrounds) {
-    var heightRegex = /\-h\d+\//;
+var updateWidthHeight = function(width, height, backgrounds) {
+    // If a width is specified, this function rewrites the 's' dimension in the
+    // URL to guarantee that the specified width is honored.
+    var widthRegex = /\/s\d+\-w\d+/;
+    var heightRegex = /-h\d+\//;
     _.each(backgrounds, function(backgroundEntry) {
-        backgroundEntry.url = backgroundEntry.url.replace(
-          heightRegex, '-h'+heightString+'/');
+        if (width) {
+            backgroundEntry.url = backgroundEntry.url.replace(
+              widthRegex, '/s'+width+'-w'+width);
+        }
+        if (height) {
+            backgroundEntry.url = backgroundEntry.url.replace(
+              heightRegex, '-h'+height+'/');
+        }
     });
 };
 
@@ -63,14 +74,15 @@ var downloadImages = function(backgrounds, directory) {
 };
 
 var options = nopt({
-    width: String,
+    download: String,
     height: String,
+    help: Boolean,
     load: String,
     save: String,
-    writemd: String,
-    download: String,
-    help: Boolean,
-    verbose: Boolean
+    size: String,
+    verbose: Boolean,
+    width: String,
+    writemd: String
 }, {
     h: '--help',
     v: '--verbose'
@@ -81,6 +93,7 @@ if (options.help) {
     --download=<directory> \
     --height=<height_pixels> \
     --save=<file> \
+    --size=<maximum_size_pixels> \
     --width=<width_pixels> \
     --writemd=<file>';
     console.log(chalk.yellow(helpString));
@@ -90,13 +103,25 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.width) {
-        console.log(chalk.underline('Updating width to', options.width));
-        updateWidth(options.width, backgrounds);
-    }
-    if (options.height) {
-        console.log(chalk.underline('Updating height to', options.height));
-        updateHeight(options.height, backgrounds);
+    // We give priority to the size argument over the width and height arguments
+    // because it is designed to clear those arguments from the URL so as to be
+    // able to guarantee the provided size.
+    if (options.size) {
+        console.log(chalk.underline('Updating size to', options.size));
+        updateSize(options.size, backgrounds);
+    } else {
+        var width, height;
+        if (options.width) {
+            width = options.width;
+            console.log(chalk.underline('Updating width to', options.width));
+        }
+        if (options.height) {
+            height = options.height;
+            console.log(chalk.underline('Updating height to', options.height));
+        }
+        if (options.width || options.height) {
+            updateWidthHeight(width, height, backgrounds);
+        }
     }
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));

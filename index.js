@@ -10,10 +10,10 @@ var parseChromecastHome = function(htmlString) {
     var JSONParse = htmlString.match(initJSONStateRegex)[1];
     var initState = eval(JSONParse); // I don't know why this is ok but JSON.parse fails.
     var parsedBackgrounds = [];
-    for (var i in initState[1]) {
+    for (var i in initState[0]) {
         var backgroundEntry = {
-            url: initState[1][i][1],
-            author: initState[1][i][2]
+            url: initState[0][i][0],
+            author: initState[0][i][1]
         };
         parsedBackgrounds.push(backgroundEntry);
     }

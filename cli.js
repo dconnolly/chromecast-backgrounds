@@ -30,8 +30,15 @@ var writeInlineMarkdown = function(filename, backgrounds) {
 };
 
 var updateDimensions = function(size, width, height, backgrounds) {
+    // The regular expression below looks for the presence of each of the
+    // following 4 patterns in the string being matched *in any order*:
+    // 's\d+', 'w\d+', 'c', 'h\d+'
+    // The additional conditions are:
+    // 1. Do not match '/' in the prefix for any of the 4 patterns.
+    // 2. There should be a '/' after all the 4 patterns have been matched.
+    // There's possibly a better regex to do this, but this one also works.
     var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//
-    var outputString = '';
+    var outputString;
 
     // We give priority to the size argument over the width and height arguments
     if (size) {
@@ -39,6 +46,9 @@ var updateDimensions = function(size, width, height, backgrounds) {
     }
     else if (width && height) {
         outputString = 'w' + width + '-c-h' + height + '/';
+    }
+    else {
+      return;
     }
     _.each(backgrounds, function(backgroundEntry) {
         backgroundEntry.url = backgroundEntry.url.replace(regex, outputString);
@@ -93,10 +103,11 @@ console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
     if (options.size || options.width && options.height) {
-        console.log(chalk.underline('Calling: updateDimensions(%d,%d,%d)'),
-                   options.size, options.width, options.height);
+        console.log(
+            chalk.underline('Updating dimensions(size:%d,width:%d,height:%d)'),
+            options.size, options.width, options.height);
         updateDimensions(
-          options.size, options.width, options.height, backgrounds);
+            options.size, options.width, options.height, backgrounds);
     }
 
     if (options.load) {

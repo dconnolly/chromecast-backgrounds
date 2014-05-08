@@ -29,30 +29,19 @@ var writeInlineMarkdown = function(filename, backgrounds) {
     write(filename, content);
 };
 
-var updateSize = function(sizeString, backgrounds) {
-    // Stomps over any other dimensions, such as 'w', 'h', that may be present
-    // in the URL to guarantee that the specified size is honored.
-    var sizeRegex = /\/s\d+.*?\//;
-    _.each(backgrounds, function(backgroundEntry) {
-        backgroundEntry.url = backgroundEntry.url.replace(
-          sizeRegex, '/s'+sizeString+'/');
-    });
-};
+var updateDimensions = function(size, width, height, backgrounds) {
+    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//
+    var outputString = '';
 
-var updateWidthHeight = function(width, height, backgrounds) {
-    // If a width is specified, this function rewrites the 's' dimension in the
-    // URL to guarantee that the specified width is honored.
-    var widthRegex = /\/s\d+\-w\d+/;
-    var heightRegex = /-h\d+\//;
+    // We give priority to the size argument over the width and height arguments
+    if (size) {
+        outputString = 's' + size + '/';
+    }
+    else if (width && height) {
+        outputString = 'w' + width + '-c-h' + height + '/';
+    }
     _.each(backgrounds, function(backgroundEntry) {
-        if (width) {
-            backgroundEntry.url = backgroundEntry.url.replace(
-              widthRegex, '/s'+width+'-w'+width);
-        }
-        if (height) {
-            backgroundEntry.url = backgroundEntry.url.replace(
-              heightRegex, '-h'+height+'/');
-        }
+        backgroundEntry.url = backgroundEntry.url.replace(regex, outputString);
     });
 };
 
@@ -103,26 +92,13 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    // We give priority to the size argument over the width and height arguments
-    // because it is designed to clear those arguments from the URL so as to be
-    // able to guarantee the provided size.
-    if (options.size) {
-        console.log(chalk.underline('Updating size to', options.size));
-        updateSize(options.size, backgrounds);
-    } else {
-        var width, height;
-        if (options.width) {
-            width = options.width;
-            console.log(chalk.underline('Updating width to', options.width));
-        }
-        if (options.height) {
-            height = options.height;
-            console.log(chalk.underline('Updating height to', options.height));
-        }
-        if (options.width || options.height) {
-            updateWidthHeight(width, height, backgrounds);
-        }
+    if (options.size || options.width && options.height) {
+        console.log(chalk.underline('Calling: updateDimensions(%d,%d,%d)'),
+                   options.size, options.width, options.height);
+        updateDimensions(
+          options.size, options.width, options.height, backgrounds);
     }
+
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));
         var backgroundsFromJSON = JSON.parse(read(options.load, 'utf8'));

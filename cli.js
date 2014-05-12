@@ -29,10 +29,29 @@ var writeInlineMarkdown = function(filename, backgrounds) {
     write(filename, content);
 };
 
-var updateSize = function(sizeString, backgrounds) {
-    var sizeRegex = /\/s\d+.*?\//;
+var updateDimensions = function(size, width, height, backgrounds) {
+    // The regular expression below looks for the presence of each of the
+    // following 4 patterns in the string being matched *in any order*:
+    // 's\d+', 'w\d+', 'c', 'h\d+'
+    // The additional conditions are:
+    // 1. Do not match '/' in the prefix for any of the 4 patterns.
+    // 2. There should be a '/' after all the 4 patterns have been matched.
+    // There's possibly a better regex to do this, but this one also works.
+    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//
+    var outputString;
+
+    // We give priority to the size argument over the width and height arguments
+    if (size) {
+        outputString = 's' + size + '/';
+    }
+    else if (width && height) {
+        outputString = 'w' + width + '-c-h' + height + '/';
+    }
+    else {
+      return;
+    }
     _.each(backgrounds, function(backgroundEntry) {
-        backgroundEntry.url = backgroundEntry.url.replace(sizeRegex, '/'+sizeString+'/');
+        backgroundEntry.url = backgroundEntry.url.replace(regex, outputString);
     });
 };
 
@@ -54,13 +73,15 @@ var downloadImages = function(backgrounds, directory) {
 };
 
 var options = nopt({
-    size: String,
+    download: String,
+    height: String,
+    help: Boolean,
     load: String,
     save: String,
-    writemd: String,
-    download: String,
-    help: Boolean,
-    verbose: Boolean
+    size: String,
+    verbose: Boolean,
+    width: String,
+    writemd: String
 }, {
     h: '--help',
     v: '--verbose'
@@ -69,8 +90,10 @@ var options = nopt({
 if (options.help) {
     var helpString = 'chromecast-backgrounds \
     --download=<directory> \
-    --size=<size> \
+    --height=<height_pixels> \
     --save=<file> \
+    --size=<maximum_size_pixels> \
+    --width=<width_pixels> \
     --writemd=<file>';
     console.log(chalk.yellow(helpString));
     return;
@@ -79,10 +102,14 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.size) {
-        console.log(chalk.underline('Updating sizes to', options.size));
-        updateSize(options.size, backgrounds);
+    if (options.size || options.width && options.height) {
+        console.log(
+            chalk.underline('Updating dimensions(size:%d,width:%d,height:%d)'),
+            options.size, options.width, options.height);
+        updateDimensions(
+            options.size, options.width, options.height, backgrounds);
     }
+
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));
         var backgroundsFromJSON = JSON.parse(read(options.load, 'utf8'));

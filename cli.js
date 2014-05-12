@@ -29,7 +29,7 @@ var writeInlineMarkdown = function(filename, backgrounds) {
     write(filename, content);
 };
 
-var updateDimensions = function(size, width, height, backgrounds) {
+var updateDimensions = function(backgrounds, size, width, height, crop) {
     // The regular expression below looks for the presence of each of the
     // following 4 patterns in the string being matched *in any order*:
     // 's\d+', 'w\d+', 'c', 'h\d+'
@@ -37,19 +37,26 @@ var updateDimensions = function(size, width, height, backgrounds) {
     // 1. Do not match '/' in the prefix for any of the 4 patterns.
     // 2. There should be a '/' after all the 4 patterns have been matched.
     // There's possibly a better regex to do this, but this one also works.
-    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//
-    var outputString;
+    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//;
+    var dimensions = [];
 
     // We give priority to the size argument over the width and height arguments
     if (size) {
-        outputString = 's' + size + '/';
+        dimensions.push('s' + size);
     }
-    else if (width && height) {
-        outputString = 'w' + width + '-c-h' + height + '/';
+    if (width) {
+        dimensions.push('w' + width);
     }
-    else {
-      return;
+    if (height) {
+        dimensions.push('h' + height);
     }
+    if (crop) {
+        dimensions.push('c');
+    }
+    if (!dimensions.length) {
+        return;
+    }
+    var outputString = dimensions.join('-') + '/';
     _.each(backgrounds, function(backgroundEntry) {
         backgroundEntry.url = backgroundEntry.url.replace(regex, outputString);
     });
@@ -73,6 +80,7 @@ var downloadImages = function(backgrounds, directory) {
 };
 
 var options = nopt({
+    crop: Boolean,
     download: String,
     height: String,
     help: Boolean,
@@ -90,10 +98,11 @@ var options = nopt({
 if (options.help) {
     var helpString = 'chromecast-backgrounds \
     --download=<directory> \
-    --height=<height_pixels> \
-    --save=<file> \
     --size=<maximum_size_pixels> \
     --width=<width_pixels> \
+    --height=<height_pixels> \
+    --crop \
+    --save=<file> \
     --writemd=<file>';
     console.log(chalk.yellow(helpString));
     return;
@@ -102,12 +111,15 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.size || options.width && options.height) {
+    if (options.size || options.width || options.height) {
         console.log(
-            chalk.underline('Updating dimensions(size:%d,width:%d,height:%d)'),
+            chalk.underline('Updating dimensions (size:%d, width:%d, height:%d)'),
             options.size, options.width, options.height);
-        updateDimensions(
-            options.size, options.width, options.height, backgrounds);
+        updateDimensions(backgrounds,
+                         options.size,
+                         options.width,
+                         options.height,
+                         options.crop);
     }
 
     if (options.load) {

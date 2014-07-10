@@ -37,7 +37,7 @@ var updateDimensions = function(backgrounds, size, width, height, crop) {
     // 1. Do not match '/' in the prefix for any of the 4 patterns.
     // 2. There should be a '/' after all the 4 patterns have been matched.
     // There's possibly a better regex to do this, but this one also works.
-    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//;
+    var regex = /(?=[^/]*s\d+)((?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+))*[^/]+\//;
     var dimensions = [];
 
     // We give priority to the size argument over the width and height arguments
@@ -111,17 +111,6 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.size || options.width || options.height) {
-        console.log(
-            chalk.underline('Updating dimensions (size:%d, width:%d, height:%d)'),
-            options.size, options.width, options.height);
-        updateDimensions(backgrounds,
-                         options.size,
-                         options.width,
-                         options.height,
-                         options.crop);
-    }
-
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));
         var backgroundsFromJSON = JSON.parse(read(options.load, 'utf8'));
@@ -132,6 +121,16 @@ getChromecastBackgrounds().then(function(backgrounds) {
         if (newCount > 0) {
             console.log(chalk.green(String(newCount) + ' new backgrounds!'));
         }
+    }
+    if (options.size || options.width || options.height) {
+        console.log(
+            chalk.underline('Updating dimensions (size:%d, width:%d, height:%d)'),
+            options.size, options.width, options.height);
+        updateDimensions(backgrounds,
+                         options.size,
+                         options.width,
+                         options.height,
+                         options.crop);
     }
     if (options.save) {
         console.log(chalk.underline('Writing backgrounds JSON to', options.save));

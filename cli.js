@@ -30,14 +30,15 @@ var writeInlineMarkdown = function(filename, backgrounds) {
 };
 
 var updateDimensions = function(backgrounds, size, width, height, crop) {
-    // The regular expression below looks for the presence of each of the
-    // following 4 patterns in the string being matched *in any order*:
-    // 's\d+', 'w\d+', 'c', 'h\d+'
-    // The additional conditions are:
-    // 1. Do not match '/' in the prefix for any of the 4 patterns.
-    // 2. There should be a '/' after all the 4 patterns have been matched.
-    // There's possibly a better regex to do this, but this one also works.
-    var regex = /(?=[^/]*s\d+)(?=[^/]*w\d+)(?=[^/]*c)(?=[^/]*h\d+)[^/]+\//;
+    // This regex looks for a path param (leading slash included and
+    // file name) starting with s, w, or h and then some decimals, and
+    // might have -'s in there or other characters, but not slashes.
+    // This has been tested to match with real world size encoding
+    // slugs and re-written ones, eg:
+    //     w1280-s128-c-h720
+    //     s2560
+    //     s1280-w1280-c-h720-k-no
+    var regex = /\/[swh]\d+\-?[^/]*\/([^/]+\.\w+)$/;
     var dimensions = [];
 
     // We give priority to the size argument over the width and height arguments
@@ -56,7 +57,7 @@ var updateDimensions = function(backgrounds, size, width, height, crop) {
     if (!dimensions.length) {
         return;
     }
-    var outputString = dimensions.join('-') + '/';
+    var outputString = '/' + dimensions.join('-') + '/$1';
     _.each(backgrounds, function(backgroundEntry) {
         backgroundEntry.url = backgroundEntry.url.replace(regex, outputString);
     });

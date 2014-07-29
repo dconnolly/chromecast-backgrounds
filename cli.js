@@ -112,17 +112,6 @@ if (options.help) {
 console.log(chalk.underline('Parsing Chromecast Home...\n'));
 
 getChromecastBackgrounds().then(function(backgrounds) {
-    if (options.size || options.width || options.height) {
-        console.log(
-            chalk.underline('Updating dimensions (size:%d, width:%d, height:%d)'),
-            options.size, options.width, options.height);
-        updateDimensions(backgrounds,
-                         options.size,
-                         options.width,
-                         options.height,
-                         options.crop);
-    }
-
     if (options.load) {
         console.log(chalk.underline('Loading previous backgrounds from', options.load));
         var backgroundsFromJSON = JSON.parse(read(options.load, 'utf8'));
@@ -133,6 +122,16 @@ getChromecastBackgrounds().then(function(backgrounds) {
         if (newCount > 0) {
             console.log(chalk.green(String(newCount) + ' new backgrounds!'));
         }
+    }
+    if (options.size || options.width || options.height) {
+        console.log(
+            chalk.underline('Updating dimensions (size:%d, width:%d, height:%d)'),
+            options.size, options.width, options.height);
+        updateDimensions(backgrounds,
+                         options.size,
+                         options.width,
+                         options.height,
+                         options.crop);
     }
     if (options.save) {
         console.log(chalk.underline('Writing backgrounds JSON to', options.save));

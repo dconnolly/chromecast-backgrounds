@@ -3,11 +3,12 @@
 var Q = require('q');
 var request = Q.denodeify(require('request'));
 
-var chromecastHomeURL = 'https://clients3.google.com/cast/chromecast/home/v/c9541b08';
-var initJSONStateRegex = /(JSON\.parse\(.+'\))/;
+var chromecastHomeURL = 'https://clients3.google.com/cast/chromecast/home';
+var initJSONStateRegex = /(JSON\.parse\('.+'\))\)\./;
 
 var parseChromecastHome = function(htmlString) {
-    var JSONParse = htmlString.match(initJSONStateRegex)[1];
+    var matches = htmlString.match(initJSONStateRegex);
+    var JSONParse = matches[1];
     var initState = eval(JSONParse); // I don't know why this is ok but JSON.parse fails.
     var parsedBackgrounds = [];
     for (var i in initState[0]) {
